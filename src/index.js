@@ -1,9 +1,11 @@
-const personRouter = require('./personRouter');
-const noteRouter = require('./noteRouter');
-
+require('dotenv').config()
+const mongoose = require('mongoose')
 const express = require('express');
 const morgan = require('morgan')
 const cors = require("cors");
+
+const personRouter = require('./personRouter');
+const noteRouter = require('./noteRouter');
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -18,6 +20,18 @@ app.use(express.static('build'));
 app.use('/api/persons', personRouter);
 
 app.use('/api/notes', noteRouter);
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    }
+    else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
+    }
+    next(error)
+}
+app.use(errorHandler)
 
 app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}`)

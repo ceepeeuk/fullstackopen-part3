@@ -1,56 +1,62 @@
 const express = require('express');
 const router = express.Router();
 
-let notes = require('./notes.json');
+const Note = require('./models/note');
 
-router.get('/', (request, response) => {
-    response.json(notes)
+router.get('/', (request, response, next) => {
+    Note.find({}).then(notes => {
+        response.json(notes)
+    })
+    .catch(error => next(error))
 })
 
-router.get('/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const note = notes.find(note => note.id === id)
-
-    if (note) {
-        response.json(note)
-    } else {
-        response.status(404).end()
-    }
+router.get('/:id', (request, response, next) => {
+    const id = request.params.id;
+    Note.findById(id).then(note => {
+        if (note) {
+            response.json(note)
+        } else {
+            response.status(404).end()
+        }
+    })
+    .catch(error => next(error))
 })
 
-router.delete('/:id', (request, response) => {
-    const id = Number(request.params.id)
-    notes = notes.filter(note => note.id !== id)
-
+router.delete('/:id', (request, response, next) => {
+    const id = request.params.id
     response.status(204).end()
+    Note.deleteOne({ _id: id})
+        .then(() => response.status(204).end())
+        .catch(error => next(error));
 })
 
-const generateNoteId = () => {
-    const maxId = notes.length > 0
-        ? Math.max(...notes.map(n => n.id))
-        : 0
-    return maxId + 1
-}
-
-router.post('/', (request, response) => {
+router.post('/', (request, response, next) => {
     const body = request.body
 
-    if (!body.content) {
-        return response.status(400).json({
-            error: 'content missing'
-        })
-    }
-
-    const note = {
+    const note = new Note({
         content: body.content,
         important: body.important || false,
         date: new Date(),
-        id: generateNoteId(),
-    }
+    });
 
-    notes = notes.concat(note)
+    note.save().then(savedNote => {
+        response.json(savedNote)
+    })
+    .catch(error => next(error));
+})
 
-    response.json(note)
+router.put('/api/notes/:id', (request, response, next) => {
+    const { content, important } = request.body
+
+    Note.findByIdAndUpdate(
+        request.params.id,
+        { content, important },
+        { new: true, runValidators: true, context: 'query' }
+    )
+        .then(updatedNote => {
+            response.json(updatedNote)
+        })
+        .catch(error => next(error))
 })
 
 module.exports = router;

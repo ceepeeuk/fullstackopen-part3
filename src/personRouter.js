@@ -1,50 +1,56 @@
 const express = require('express');
-let persons = require('./persons.json');
 const router = express.Router();
 
+const Person = require('./models/person');
+
 router.get('/', (req, res) => {
-    res.json(persons)
+    Person.find().then(persons => res.json(persons));
 });
 
-router.get('/:id', (req, res) => {
-    const person = persons.find(p => p.id === Number(req?.params?.id));
-    if (person) {
-        res.json(person)
-    } else {
-        res.status(404).end();
-    }
+router.get('/:id', (req, res, next) => {
+    const id = req?.params?.id;
+    Person.findById(id).then((person) => {
+        if (person) {
+            res.json(person)
+        } else {
+            res.status(404).end();
+        }
+    })
+    .catch(error => next(error));
 });
 
 router.delete('/:id', (req, res) => {
-    persons = persons.filter(p => p.id !== Number(req?.params?.id));
-    res.status(204).end();
+    const id = req.params.id
+    res.status(204).end()
+    Person.deleteOne({ _id: id}).then(() => res.status(204).end());
 });
 
-const generatePersonId = () => {
-    const min = Math.ceil(persons.length + 1);
-    const max = Math.floor(10000);
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
+router.put('/:id', (req, res, next) => {
+    const id = req.params.id
+    res.status(204).end()
+    Person.updateOne(
+        { _id: id},
+        { number: req.body.number },
+        { runValidators: true })
+        .then(() => res.status(201).end())
+        .catch(error => next(error));
+});
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res, next) => {
     if (!req.body || !req.body.name || !req.body.number) {
-        return res.status(400).send({ error: 'name and number mandatory'});
+        return res.status(400).send({error: 'name and number mandatory'});
     }
 
-    const existing = persons.find(p => p.name === req.body.name);
+    const existing = await Person.findOne({name: req.body.name});
 
     if (existing) {
-        return res.status(400).send({ error: 'name must be unique' });
+        return res.status(400).send({error: 'name must be unique'});
     }
 
-    const person = {
-        id: generatePersonId(),
-        ...req.body,
-    };
-
-    persons = persons.concat(person);
-    // res.status(201).end(person);
-    res.status(201).json(person);
+    const person = new Person({...req.body});
+    return person.save()
+        .then(() => res.status(201).json(person))
+        .catch(error => next(error));
 });
 
 router.get('/info', (req, res) => {
