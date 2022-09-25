@@ -1,13 +1,12 @@
-const express = require('express')
-const router = express.Router()
+const PersonRouter = require('express').Router()
 
-const Person = require('./models/person')
+const Person = require('../models/person')
 
-router.get('/', (req, res) => {
+PersonRouter.get('/', (req, res) => {
   Person.find().then(persons => res.json(persons))
 })
 
-router.get('/:id', (req, res, next) => {
+PersonRouter.get('/:id', (req, res, next) => {
   const id = req?.params?.id
   Person.findById(id).then((person) => {
     if (person) {
@@ -19,13 +18,13 @@ router.get('/:id', (req, res, next) => {
     .catch(error => next(error))
 })
 
-router.delete('/:id', (req, res) => {
+PersonRouter.delete('/:id', (req, res) => {
   const id = req.params.id
   res.status(204).end()
   Person.deleteOne({ _id: id }).then(() => res.status(204).end())
 })
 
-router.put('/:id', (req, res, next) => {
+PersonRouter.put('/:id', (req, res, next) => {
   const id = req.params.id
   res.status(204).end()
   Person.updateOne(
@@ -36,7 +35,7 @@ router.put('/:id', (req, res, next) => {
     .catch(error => next(error))
 })
 
-router.post('/', async (req, res, next) => {
+PersonRouter.post('/', async (req, res, next) => {
   if (!req.body || !req.body.name || !req.body.number) {
     return res.status(400).send({ error: 'name and number mandatory' })
   }
@@ -53,7 +52,7 @@ router.post('/', async (req, res, next) => {
     .catch(error => next(error))
 })
 
-router.get('/info', async (req, res) => {
+PersonRouter.get('/info', async (req, res) => {
   const count = await Person.count()
   res.send(`<div>Phonebook has info for ${count.length} people.</div>
         <div>&nbsp;</div>
@@ -61,4 +60,4 @@ router.get('/info', async (req, res) => {
     `)
 })
 
-module.exports = router
+module.exports = PersonRouter

@@ -1,16 +1,16 @@
-const express = require('express')
-const router = express.Router()
+const NotesRouter = require('express').Router()
+const Note = require('../models/note')
+const logger = require('../utils/logger')
 
-const Note = require('./models/note')
-
-router.get('/', (request, response, next) => {
+NotesRouter.get('/', (request, response, next) => {
+  logger.info('in get')
   Note.find({}).then(notes => {
     response.json(notes)
   })
     .catch(error => next(error))
 })
 
-router.get('/:id', (request, response, next) => {
+NotesRouter.get('/:id', (request, response, next) => {
   const id = request.params.id
   Note.findById(id).then(note => {
     if (note) {
@@ -22,7 +22,7 @@ router.get('/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-router.delete('/:id', (request, response, next) => {
+NotesRouter.delete('/:id', (request, response, next) => {
   const id = request.params.id
   response.status(204).end()
   Note.deleteOne({ _id: id })
@@ -30,7 +30,7 @@ router.delete('/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-router.post('/', (request, response, next) => {
+NotesRouter.post('/', (request, response, next) => {
   const body = request.body
 
   const note = new Note({
@@ -45,7 +45,7 @@ router.post('/', (request, response, next) => {
     .catch(error => next(error))
 })
 
-router.put('/api/notes/:id', (request, response, next) => {
+NotesRouter.put('/api/notes/:id', (request, response, next) => {
   const { content, important } = request.body
 
   Note.findByIdAndUpdate(
@@ -59,4 +59,4 @@ router.put('/api/notes/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-module.exports = router
+module.exports = NotesRouter
